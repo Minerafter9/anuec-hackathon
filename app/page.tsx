@@ -1,5 +1,5 @@
 'use client';
-
+import { useRef, useEffect } from "react";
 import React, { useCallback, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -37,6 +37,7 @@ interface ScheduledPost {
 }
 
 export default function Home() {
+  const scrollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -46,6 +47,51 @@ export default function Home() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropHoverDate, setDropHoverDate] = useState<string | null>(null);
+  useEffect(() => {
+  // Clean up scroll interval on unmount
+  return () => {
+    if (scrollIntervalRef.current) clearInterval(scrollIntervalRef.current);
+  };
+}, []);
+
+const onDragOverWindow = (e: any) => {
+  if (!e) return;
+  const scrollMargin = 80; // px from window bottom
+  const speed = 20; // px per tick
+  const mouseY = e.clientY;
+  const windowHeight = window.innerHeight;
+  if (mouseY > windowHeight - scrollMargin) {
+    if (!scrollIntervalRef.current) {
+      scrollIntervalRef.current = setInterval(() => {
+        window.scrollBy({ top: speed, behavior: "smooth" });
+      }, 50);
+    }
+  } else {
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  }
+};
+
+useEffect(() => {
+  if (draggingId) {
+    window.addEventListener("dragover", onDragOverWindow);
+  } else {
+    window.removeEventListener("dragover", onDragOverWindow);
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  }
+  return () => {
+    window.removeEventListener("dragover", onDragOverWindow);
+    if (scrollIntervalRef.current) {
+      clearInterval(scrollIntervalRef.current);
+      scrollIntervalRef.current = null;
+    }
+  };
+}, [draggingId]);
 
   // --- uploader ---
   const onFiles = useCallback((files: FileList | null) => {
