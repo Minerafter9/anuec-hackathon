@@ -1,0 +1,29 @@
+// components/ThemeToggle.tsx
+"use client";
+import { useEffect, useState } from "react";
+
+export default function ThemeToggle() {
+  const [theme, setTheme] = useState<"light" | "dark">();
+
+  useEffect(() => {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setTheme(prefersDark ? "dark" : "light");
+  }, []);
+
+  useEffect(() => {
+    if (!theme) return;
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  return (
+    <button
+      type="button"
+      className="toggle"
+      aria-label="Toggle dark mode"
+      onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+    >
+      {theme === "dark" ? "🌙 Dark" : "☀️ Light"}
+    </button>
+  );
+}
